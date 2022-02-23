@@ -2,7 +2,7 @@
 % Please edit documentation in R/attachCellID.R
 \name{makeHex}
 \alias{makeHex}
-\title{Create hex binnings as a SpatialPolygonsDataFrame}
+\title{Create hex binnings as an sf object}
 \usage{
 makeHex(df, lon_colname, lat_colname, resolution, crs)
 }
@@ -21,5 +21,5 @@ makeHex(df, lon_colname, lat_colname, resolution, crs)
 SpatialPolygons
 }
 \description{
-Create hex binnings as a SpatialPolygonsDataFrame
+Create hex binnings as an sf object
 }

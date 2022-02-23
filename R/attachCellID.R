@@ -21,16 +21,18 @@ attachGridVars <- function(df, make_grid, lon_colname, lat_colname) {
 #' @param lon_colname character
 #' @param lat_colname character
 #' @param resolution integer
+#' @param square boolean
 #' @return list
 #' @export
-makeGrid <- function(df, lon_colname, lat_colname, resolution) {
+makeGrid <- function(df, lon_colname, lat_colname, resolution, square = FALSE) {
   dat <- df %>% dplyr::select(lon_colname, lat_colname)
   origin <- dat %>% sapply(min)
   cellsize <- dat %>% sapply(., function(x) { diff(range(x))/resolution })
+  if(square) { cellsize[which(cellsize == max(cellsize))] <- min(cellsize) }
   return(list('origin' = origin, 'cellsize' = cellsize))
 }
 
-#' Create hex binnings as a SpatialPolygonsDataFrame
+#' Create hex binnings as an sf object
 #' @param df data.frame
 #' @param lon_colname character
 #' @param lat_colname character
@@ -39,50 +41,30 @@ makeGrid <- function(df, lon_colname, lat_colname, resolution) {
 #' @return SpatialPolygons
 #' @export
 makeHex <- function(df, lon_colname, lat_colname, resolution, crs) {
-  sp::coordinates(df) <- ~ lon + lat
-  sp::proj4string(df) <- crs
-  cellsize <- diff(range(df@coords[,lon_colname]))/resolution
-  df@bbox[,'max'] <- df@bbox[,'max'] + cellsize
-  df@bbox[,'min'] <- df@bbox[,'min'] - cellsize
-  hex_pts <- sp::spsample(df, type = 'hexagonal', cellsize = cellsize, bb = df@bbox)
-  hex_poly <- sp::HexPoints2SpatialPolygons(hex_pts)
+  df_sf <- sf::st_as_sf(x = as.data.frame(df), coords = c(lon_colname, lat_colname), crs = crs)
+  cellsize <- diff(range(df[,lon_colname]))/resolution
+  a <- sf::st_bbox(df_sf) %>% matrix(2,2)
+  a[,2] <- a[,2] + cellsize
+  a[,1] <- a[,1] - cellsize
+  rownames(a) <- c('lon', 'lat')
+  colnames(a) <- c('min', 'max')
+  hex_poly <- sf::st_make_grid(df_sf, cellsize = cellsize, square = FALSE)
   return(hex_poly)
 }
 
-#' Attach hexbins
-#' @param df data.frame
-#' @param make_hex SpatialPolygons
-#' @param lon_colname character
-#' @param lat_colname character
-#' @return data.frame
-#' @export
-attachHexVars <- function(df, make_hex, lon_colname, lat_colname) {
-  df_sp <- df
-  crs <- make_hex@proj4string
-  names(df_sp)[which(names(df_sp) == lon_colname)] <- 'lon'
-  names(df_sp)[which(names(df_sp) == lat_colname)] <- 'lat'
-  sp::coordinates(df_sp) <- ~ lon + lat
-  sp::proj4string(df_sp) <- crs
-  df$cell_id <- sp::over(df_sp, make_hex) %>% as.character() %>% as.factor()
-  return(df %>% dplyr::as_tibble())
-}
  #' Attach custom shapefile cell ids to data
 #' @param df data.frame
 #' @param shp_poly SpatialPolygons
-#' @param poly_id_colname character
 #' @param lon_colname character
 #' @param lat_colname character
 #' @return data.frame
 #' @export
-attachShpVars <- function(df, shp_poly, poly_id_colname, lon_colname, lat_colname) {
-  df_sp <- df
-  crs <- shp_poly@proj4string
-  names(df_sp)[which(names(df_sp) == lon_colname)] <- 'lon'
-  names(df_sp)[which(names(df_sp) == lat_colname)] <- 'lat'
-  sp::coordinates(df_sp) <- ~ lon + lat
-  sp::proj4string(df_sp) <- crs
-  ptinpoly <- sp::over(df_sp, shp_poly)
-  df$cell_id <- ptinpoly[[poly_id_colname]] %>% as.factor()
+attachShpVars <- function(df, shp_poly, lon_colname, lat_colname) {
+  crs <- sf::st_crs(shp_poly)
+  df_sf <- sf::st_as_sf(x = as.data.frame(df), coords = c(lon_colname, lat_colname), crs = crs)
+  names(df_sf)[which(names(df_sf) == lon_colname)] <- 'lon'
+  names(df_sf)[which(names(df_sf) == lat_colname)] <- 'lat'
+  df$cell_id <- unlist(lapply(sf::st_intersects(df_sf, shp_poly), function(x) { x[1] })) %>% as.character %>% as.factor
   return(df %>% dplyr::as_tibble())
 }
 

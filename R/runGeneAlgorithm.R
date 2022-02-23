@@ -7,7 +7,7 @@
 #' @param max_mute_intensity numeric
 #' @param mute_decay numeric
 #' @param pop integer
-#' @param grid list string
+#' @param grid sf list
 #' @param resolution integer
 #' @return list
 #' @export

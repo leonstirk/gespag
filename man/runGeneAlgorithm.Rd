@@ -34,7 +34,7 @@ runGeneAlgorithm(
 
 \item{pop}{integer}
 
-\item{grid}{list string}
+\item{grid}{sf list}
 
 \item{resolution}{integer}
 }

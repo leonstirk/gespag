@@ -4,7 +4,7 @@
 \alias{makeGrid}
 \title{Make grid object}
 \usage{
-makeGrid(df, lon_colname, lat_colname, resolution)
+makeGrid(df, lon_colname, lat_colname, resolution, square = FALSE)
 }
 \arguments{
 \item{df}{data.frame}
@@ -14,6 +14,8 @@ makeGrid(df, lon_colname, lat_colname, resolution)
 \item{lat_colname}{character}
 
 \item{resolution}{integer}
+
+\item{square}{boolean}
 }
 \value{
 list

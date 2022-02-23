@@ -20,6 +20,31 @@ seeGrid <- function(gdf, map, fill_value = 'ln_sale_price') {
   )
 }
 
+#' see the shp overlay for a gdf created with a given resolution
+#' @param gdf data.frame
+#' @param shp sp
+#' @param map ggmap
+#' @param fill_value character
+#' @return ggplot
+#' @export
+seeShp <- function(gdf, shp, map, fill_value = 'ln_sale_price') {
+
+  shp_data <- gdf %>% group_by(cell_id) %>%
+    summarise(fill = mean(as.numeric(get(fill_value))), count = length(as.numeric(get(fill_value))))
+  shp <- st_as_sf(shp)
+  shp$id <- seq(1:nrow(shp)) %>% as.character %>% as.factor
+  plt <- dplyr::left_join(shp , shp_data, by=c("id"="cell_id"))
+
+  quartz()
+  return(
+    ggmap::ggmap(map) +
+      ggplot2::geom_sf(data = stats::na.omit(plt), aes(fill = fill, alpha = count), lwd = 0.2, inherit.aes = F) +
+      viridis::scale_fill_viridis() +
+      ggplot2::scale_alpha_continuous()
+  )
+}
+
+
 #' Plot the organism evolution
 #' @param organism list
 #' @return plot

@@ -1,0 +1,195 @@
+---
+title: "gespag-vignette"
+output: rmarkdown::html_vignette
+vignette: >
+  %\VignetteIndexEntry{gespag-vignette}
+  %\VignetteEngine{knitr::rmarkdown}
+  %\VignetteEncoding{UTF-8}
+---
+
+```{r, include = FALSE}
+knitr::opts_chunk$set(
+  collapse = TRUE,
+  comment = "#>"
+)
+```
+
+```{r setup}
+library(tidyverse)
+library(gespag)
+library(modman)
+library(sf)
+library(ggplot2)
+library(viridis)
+library(ggmap)
+library(tmap)
+```
+
+
+```{r}
+## Dunedin flood dates
+dud_event_dates <- c('e1' = as.Date('2015-06-04'))
+das <- readRDS('dud_allsales_complete.rds')
+das_sf <- sf::st_as_sf(x = as.data.frame(das), coords = c('lon', 'lat'), crs = 4326)
+
+####################################################################################################
+## Get some maps for visualisation
+
+## Big map
+b_bbox <- st_bbox(das_sf)
+names(b_bbox) <- c('left', 'bottom', 'right', 'top')
+map_big <- ggmap::get_map(location = b_bbox, maptype = "roadmap", source = "osm", color = "bw")
+
+```
+
+
+```{r}
+fit <- lm(dat = das, sd_flood_hull
+          ~ poly(building_floor_area, 2, raw = TRUE) 
+          + poly(land_area, 2, raw = TRUE)
+          + decade_built
+          + bedrooms
+          + bathrooms
+          + deck
+          + contour
+          + view_type*view_scope
+          + offstreet_parking
+          + carparks:offstreet_parking
+          + wall_construction_material
+          # + poly(dist_cbd, 3, raw = TRUE)
+          # + iigp_subzone
+          # + sale_year
+          + poly(median_income, 3, raw = TRUE)
+          + poly(hh_rent_rate, 3, raw = TRUE)
+)
+
+propensity_score <- predict(fit)
+ggplot() + geom_point(aes(x = das$lon, y = das$lat, col = propensity_score)) + scale_color_viridis()
+
+## p_resids <- resid(fit)
+## ggplot() + geom_point(aes(x = das$lon, y = das$lat, col = p_resids)) + scale_color_viridis()
+
+####################################################################################################
+
+## gespag setup
+resolution <- 80
+sf_crs <- 4326
+sp_crs <- sp::CRS("+init=epsg:4326")
+
+hex <- das %>% makeHex('lon', 'lat', resolution, sf_crs)
+gdf_hex <- das %>% attachShpVars(hex, lon_colname = 'lon',  lat_colname = 'lat')
+## gdf_hex %>% seeShp(hex, map_big, fill_value = 'ln_sale_price')
+
+## Diagostics on resolution value
+table(gdf_hex$cell_id) %>% as.data.frame %>% as_tibble() %>% apply(., 2, as.numeric) %>% .[,2] %>% sm::sm.density(h = 2)
+table(gdf_hex$cell_id) %>% as.data.frame %>% as_tibble() %>% apply(., 2, as.numeric) %>% .[,2] %>% quantile(seq(0,1,0.2))
+
+gdf_hex$propensity_score <- propensity_score
+
+gdf <- gdf_hex
+grid <- hex
+rm(gdf_hex, hex)
+
+cell_ids <- gdf$cell_id %>% levels
+set.seed(3895476)
+
+response <- 'propensity_score'
+control_vars <- c()
+
+organism_models <- gdf %>% makeOrganismModels(response)
+gdf <- gdf %>% select(propensity_score, cell_id)
+
+ttv <- gdf %>% TTV()
+## ttv <- gdf %>% filter(sale_date < event_dates[2]) %>% TTV()
+
+```
+
+```{r}
+organism <- gespag::runGeneAlgorithm(ttv, cell_ids, organism_models, n_gen = 2000, grid = grid, resolution = resolution)
+saveRDS(organism, 'spag_organisms/organism_x.rds')
+```
+
+```{r}
+organism<- readRDS('spag_organisms/organism_x.rds')
+gdf <- sortSpagClass(gdf, organism, organism_models)
+
+## Plot the evolution of the model
+evolution <- organism[['evolution']]
+theoretical_max <- organism[['other']][['theoretical_max']]
+baseline <- organism[['other']][['baseline']]
+
+plot(evolution$train ~ evolution$generation,
+     type = 'l',
+     col = 'red',
+     ylim = c(baseline, theoretical_max),
+     ylab = 'r2',
+     xlab = 'generation')
+with(evolution, lines(test ~ generation, col = 'blue', lty = 2))
+with(evolution, lines(validate ~ generation, col = 'green', lty = 2))
+abline(h = baseline)
+abline(h = theoretical_max)
+
+## Visualise spag with ggplot
+gdf %>% seeShp(grid, map_big, fill_value = 'spag_class')
+
+## Visualise spag with tmap
+shp_data <- gdf %>% group_by(cell_id) %>%
+    summarise(fill = mean(as.numeric(spag_class)), count = length(as.numeric(spag_class)))
+shp <- st_as_sf(grid)
+shp$id <- seq(1:nrow(shp)) %>% as.character %>% as.factor
+plt <- dplyr::left_join(shp , shp_data, by=c("id"="cell_id"))
+tmap_mode('view') 
+tm_shape(na.omit(plt)) + tm_polygons(col = 'fill', style = 'cont', palette = 'viridis', alpha = 0.5)
+```
+
+
+```{r}
+## Regressions
+response <- 'ln_sale_price'
+test_var <- 'sd_flood_hull*sale_year'
+control_vars <- c('poly(building_floor_area, 2, raw = TRUE)',
+                 'poly(land_area, 2, raw = TRUE)',
+                 'decade_built',
+                 'bedrooms',
+                 'bathrooms',
+                 'deck',
+                 'contour',
+                 'view_type*view_scope',
+                 'offstreet_parking',
+                 'carparks:offstreet_parking',
+                 'wall_construction_material',
+                 'poly(dist_cbd, 3, raw = TRUE)',
+                 ## 'iigp_subzone',
+                 ## 'sale_year',
+                 'poly(median_income, 3, raw = TRUE)',
+                 'poly(hh_rent_rate, 3, raw = TRUE)'
+)
+
+model <- as.formula(paste0(c(response,
+                             paste0(c(
+                               test_var,
+                               control_vars
+                               ), collapse = '+')), collapse = ' ~ '))
+
+summary(lm(data = das, model))
+tmp <- lm(data = das, model)
+tmp$coefficients[str_which(names(tmp$coefficients), "sd_flood_hull")]
+tmp %>% sjPlot::plot_model(terms = names(tmp$coefficients)[str_which(names(tmp$coefficients), "sd_flood_hull")])
+
+
+summary(lm(data = das %>% filter(spag_class == 4), model))
+tmp <- lm(data = das %>% filter(spag_class == 4), model)
+tmp$coefficients[str_which(names(tmp$coefficients), "sd_flood_hull")]
+tmp %>% sjPlot::plot_model(terms = names(tmp$coefficients)[str_which(names(tmp$coefficients), "sd_flood_hull")])
+
+
+ggplot() + geom_point(data = das %>% filter(spag_class == 4), aes(x = lon, y = lat, col = ln_sale_price)) + scale_color_viridis()
+
+ggplot() + geom_point(data = das %>% filter(spag_class == 4), aes(x = lon, y = lat, col = median_income)) + scale_color_viridis()
+
+ggplot() + geom_point(data = das %>% filter(spag_class == 4), aes(x = lon, y = lat, col = hh_rent_rate)) + scale_color_viridis()
+
+```
+
+
+

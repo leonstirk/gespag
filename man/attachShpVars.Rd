@@ -4,14 +4,12 @@
 \alias{attachShpVars}
 \title{Attach custom shapefile cell ids to data}
 \usage{
-attachShpVars(df, shp_poly, poly_id_colname, lon_colname, lat_colname)
+attachShpVars(df, shp_poly, lon_colname, lat_colname)
 }
 \arguments{
 \item{df}{data.frame}
 
 \item{shp_poly}{SpatialPolygons}
-
-\item{poly_id_colname}{character}
 
 \item{lon_colname}{character}
 

@@ -27,4 +27,10 @@ Imports:
     hexbin,
     sp,
     stringr,
-    grid
+    grid,
+    broom,
+    sf
+Suggests: 
+    rmarkdown,
+    knitr
+VignetteBuilder: knitr
