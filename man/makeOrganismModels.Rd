@@ -4,14 +4,14 @@
 \alias{makeOrganismModels}
 \title{Return models and bounds for input into runGeneAlgorithm}
 \usage{
-makeOrganismModels(gdf, mf, time_var = "sale_quarter")
+makeOrganismModels(gdf, response, control_vars = c())
 }
 \arguments{
 \item{gdf}{data.frame}
 
-\item{mf}{data.frame}
+\item{response}{character}
 
-\item{time_var}{character}
+\item{control_vars}{character}
 }
 \value{
 list

@@ -23,7 +23,6 @@ Imports:
     ggplot2,
     ggmap,
     viridis,
-    modman,
     hexbin,
     sp,
     stringr,

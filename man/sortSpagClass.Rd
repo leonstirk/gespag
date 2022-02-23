@@ -4,14 +4,14 @@
 \alias{sortSpagClass}
 \title{Attach and sort spag class from organism to object to gdf object}
 \usage{
-sortSpagClass(gdf, organism, mf)
+sortSpagClass(gdf, organism, organism_models)
 }
 \arguments{
 \item{gdf}{data.frame}
 
 \item{organism}{list}
 
-\item{mf}{data.frame}
+\item{organism_models}{list}
 }
 \value{
 data.frame

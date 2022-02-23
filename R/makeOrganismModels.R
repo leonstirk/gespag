@@ -1,7 +1,7 @@
 #' Return models and bounds for input into runGeneAlgorithm
 #' @param gdf data.frame
-#' @param mf data.frame
-#' @param time_var character
+#' @param response character
+#' @param control_vars character
 #' @return list
 #' @export
 makeOrganismModels <- function(gdf, response, control_vars = c()) {

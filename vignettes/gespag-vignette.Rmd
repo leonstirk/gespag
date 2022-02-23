@@ -14,10 +14,9 @@ knitr::opts_chunk$set(
 )
 ```
 
-```{r setup}
+```{r setup, eval=FALSE, include=FALSE}
 library(tidyverse)
 library(gespag)
-library(modman)
 library(sf)
 library(ggplot2)
 library(viridis)
@@ -26,7 +25,7 @@ library(tmap)
 ```
 
 
-```{r}
+```{r, eval = FALSE, include = FALSE}
 ## Dunedin flood dates
 dud_event_dates <- c('e1' = as.Date('2015-06-04'))
 das <- readRDS('dud_allsales_complete.rds')
@@ -40,10 +39,7 @@ b_bbox <- st_bbox(das_sf)
 names(b_bbox) <- c('left', 'bottom', 'right', 'top')
 map_big <- ggmap::get_map(location = b_bbox, maptype = "roadmap", source = "osm", color = "bw")
 
-```
-
-
-```{r}
+####################################################################################################
 fit <- lm(dat = das, sd_flood_hull
           ~ poly(building_floor_area, 2, raw = TRUE) 
           + poly(land_area, 2, raw = TRUE)
@@ -102,14 +98,15 @@ gdf <- gdf %>% select(propensity_score, cell_id)
 ttv <- gdf %>% TTV()
 ## ttv <- gdf %>% filter(sale_date < event_dates[2]) %>% TTV()
 
-```
+####################################################################################################
+####################################################################################################
 
-```{r}
-organism <- gespag::runGeneAlgorithm(ttv, cell_ids, organism_models, n_gen = 2000, grid = grid, resolution = resolution)
-saveRDS(organism, 'spag_organisms/organism_x.rds')
-```
+## organism <- gespag::runGeneAlgorithm(ttv, cell_ids, organism_models, n_gen = 2000, grid = grid, resolution = resolution)
+## saveRDS(organism, 'spag_organisms/organism_x.rds')
 
-```{r}
+####################################################################################################
+####################################################################################################
+
 organism<- readRDS('spag_organisms/organism_x.rds')
 gdf <- sortSpagClass(gdf, organism, organism_models)
 
@@ -140,10 +137,10 @@ shp$id <- seq(1:nrow(shp)) %>% as.character %>% as.factor
 plt <- dplyr::left_join(shp , shp_data, by=c("id"="cell_id"))
 tmap_mode('view') 
 tm_shape(na.omit(plt)) + tm_polygons(col = 'fill', style = 'cont', palette = 'viridis', alpha = 0.5)
-```
 
+####################################################################################################
+####################################################################################################
 
-```{r}
 ## Regressions
 response <- 'ln_sale_price'
 test_var <- 'sd_flood_hull*sale_year'

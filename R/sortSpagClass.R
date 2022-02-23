@@ -1,7 +1,7 @@
 #' Attach and sort spag class from organism to object to gdf object
 #' @param gdf data.frame
 #' @param organism list
-#' @param mf data.frame
+#' @param organism_models list
 #' @return data.frame
 #' @export
 sortSpagClass <- function(gdf, organism, organism_models) {
