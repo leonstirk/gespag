@@ -24,6 +24,40 @@ library(ggmap)
 library(tmap)
 ```
 
+```{r, eval=FALSE, include=FALSE}
+## mutateGen
+genome <- round(runif(100, 0,1))
+n_gen <- 180
+gen <- seq(0,n_gen)
+mute_intensity <- 0.5
+
+mutateGen <- function (genome, n_class, mute_intensity, n_gen = NA, gen = NA, 
+    mute_decay = 0.5) 
+{
+    l <- length(genome)
+    if (!anyNA(c(n_gen, gen))) {
+        n <- ceiling(l * (-(gen/n_gen)^(1/mute_decay) + 1) * mute_intensity + 
+            1e-05)
+    }
+    else {
+        n <- round(stats::runif(1, 1, ceiling(l * mute_intensity)), 
+            digits = 0)
+    }
+    ##
+    return(n)
+    ##
+    ##a <- ceiling(stats::runif(n, 0, l))
+    ##b <- floor(stats::runif(n, 0, n_class))
+    ##genome[a] <- b
+    ##return(genome)
+}
+
+plot(gen, unlist(lapply(gen, function(i) { 
+  mutateGen(genome = genome, n_class = 2,mute_intensity = mute_intensity,mute_decay = 0.5, n_gen = n_gen,gen = i)
+})))
+
+```
+
 
 ```{r, eval = FALSE, include = FALSE}
 ## Dunedin flood dates
@@ -168,14 +202,14 @@ model <- as.formula(paste0(c(response,
                                control_vars
                                ), collapse = '+')), collapse = ' ~ '))
 
-summary(lm(data = das, model))
-tmp <- lm(data = das, model)
+summary(lm(data = gdf, model))
+tmp <- lm(data = gdf, model)
 tmp$coefficients[str_which(names(tmp$coefficients), "sd_flood_hull")]
 tmp %>% sjPlot::plot_model(terms = names(tmp$coefficients)[str_which(names(tmp$coefficients), "sd_flood_hull")])
 
 
-summary(lm(data = das %>% filter(spag_class == 4), model))
-tmp <- lm(data = das %>% filter(spag_class == 4), model)
+summary(lm(data = gdf %>% filter(spag_class == 4), model))
+tmp <- lm(data = gdf %>% filter(spag_class == 4), model)
 tmp$coefficients[str_which(names(tmp$coefficients), "sd_flood_hull")]
 tmp %>% sjPlot::plot_model(terms = names(tmp$coefficients)[str_which(names(tmp$coefficients), "sd_flood_hull")])
 
@@ -187,6 +221,9 @@ ggplot() + geom_point(data = das %>% filter(spag_class == 4), aes(x = lon, y = l
 ggplot() + geom_point(data = das %>% filter(spag_class == 4), aes(x = lon, y = lat, col = hh_rent_rate)) + scale_color_viridis()
 
 ```
+
+
+
 
 
 

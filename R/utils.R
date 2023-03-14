@@ -106,7 +106,7 @@ nGenModel <- function(df, cell_ids, model, n_class, genome, gen) {
 mutateGen <- function(genome, n_class, mute_intensity, n_gen = NA, gen = NA, mute_decay = 2) {
   l <- length(genome)
   if(!anyNA(c(n_gen, gen))) {
-    n <- ceiling((-(gen/n_gen)^(1/mute_decay)+1)*mute_intensity+0.00001)
+    n <- ceiling(l * (-(gen/n_gen)^(1/mute_decay)+1)*mute_intensity+0.00001)
   } else {
     n <- round(stats::runif(1,1,ceiling(l*mute_intensity)),digits = 0)
   }

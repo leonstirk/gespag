@@ -4,7 +4,7 @@
 \alias{seeShp}
 \title{see the shp overlay for a gdf created with a given resolution}
 \usage{
-seeShp(gdf, shp, map, fill_value = "ln_sale_price")
+seeShp(gdf, shp, map, fill_value = "ln_sale_price", discrete_color = FALSE)
 }
 \arguments{
 \item{gdf}{data.frame}
@@ -14,6 +14,8 @@ seeShp(gdf, shp, map, fill_value = "ln_sale_price")
 \item{map}{ggmap}
 
 \item{fill_value}{character}
+
+\item{discrete_color}{boolean}
 }
 \value{
 ggplot

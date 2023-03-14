@@ -12,7 +12,7 @@
 #' @return list
 #' @export
 runGeneAlgorithm <- function(ttv, cell_ids, organism_models, n_class = 4, n_gen = 2000, max_mute_intensity = 0.5, mute_decay = 2, pop = 52, grid, resolution) {
-
+  ## problem with double naming the model variable
   model <- organism_models$model
   theoretical_max <- organism_models$theoretical_max
   baseline <- organism_models$baseline
